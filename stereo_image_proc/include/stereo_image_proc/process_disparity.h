@@ -39,8 +39,6 @@
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
-#include "stereo_image_proc/finish_processing.h"
-#include "stereo_image_proc/processor.h"
 
 namespace stereo_image_proc {
 
@@ -68,7 +66,7 @@ public:
   }
 
   static void processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect, const image_geometry::StereoCameraModel& model, 
-		  stereo_msgs::DisparityImage& disparity,  StereoType current_stereo_algorithm, 
+		  stereo_msgs::DisparityImage& disparity,  StereoType current_stereo_algorithm,
 		  cv::Ptr<cv::StereoBM> block_matcher, cv::Ptr<cv::StereoSGBM> sg_block_matcher, cv::Mat_<int16_t> disparity16);
 
 };

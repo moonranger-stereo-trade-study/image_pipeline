@@ -40,7 +40,8 @@
 
 namespace stereo_image_proc {
 
-static void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
+//static 
+void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
                                        const image_geometry::StereoCameraModel& model,
                                        stereo_msgs::DisparityImage& disparity, StereoType current_stereo_algorithm, 
 				       cv::Ptr<cv::StereoBM> block_matcher, cv::Ptr<cv::StereoSGBM> sg_block_matcher, cv::Mat_<int16_t> disparity16)
@@ -50,7 +51,7 @@ static void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const c
   static const double inv_dpp = 1.0 / DPP;
 
   // Block matcher produces 16-bit signed (fixed point) disparity image
-  if (current_stereo_algorithm_ == BM)
+  if (current_stereo_algorithm == BM)
 #if CV_MAJOR_VERSION >= 3
     block_matcher->compute(left_rect, right_rect, disparity16);
   else

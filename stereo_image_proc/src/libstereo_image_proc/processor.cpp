@@ -61,8 +61,7 @@ bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
     return false;
   if (!mono_processor_.process(right_raw, model.right(), output.right, right_flags >> 4))
     return false;
-
-  return FinishProcessing::finishProcessing(left_raw, right_raw, model, output, flags);
+  return FinishProcessing::finishProcessing(left_raw, right_raw, model, output, flags, this);
 }
 
 void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
