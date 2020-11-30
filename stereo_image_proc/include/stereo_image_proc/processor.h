@@ -69,6 +69,7 @@ public:
 #endif
   }
 
+  /*
   enum {
     LEFT_MONO        = 1 << 0,
     LEFT_RECT        = 1 << 1,
@@ -87,7 +88,7 @@ public:
     STEREO_ALL = DISPARITY | POINT_CLOUD | POINT_CLOUD2,
     ALL = LEFT_ALL | RIGHT_ALL | STEREO_ALL
   };
-
+  */
   inline
   StereoType getStereoType() const {return current_stereo_algorithm_;}
   inline

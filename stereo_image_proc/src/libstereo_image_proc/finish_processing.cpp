@@ -12,24 +12,27 @@
 
 namespace stereo_image_proc {
 
-  static bool FinishProcessing::finishProcessing(const sensor_msgs::ImageConstPtr& left_raw,
+  //StereoProcessor SP;
+  //static 
+  bool FinishProcessing::finishProcessing(const sensor_msgs::ImageConstPtr& left_raw,
                const sensor_msgs::ImageConstPtr& right_raw,
                const image_geometry::StereoCameraModel& model,
-               StereoImageSet& output, int flags) const
+               StereoImageSet& output, int flags, const void* sp) //const
   {
+	  StereoProcessor SP = *((StereoProcessor*)sp);
 	// Do block matching to produce the disparity image
 	  if (flags & DISPARITY) {
-		  StereoProcessor::processDisparity(output.left.rect, output.right.rect, model, output.disparity);
+		  SP.processDisparity(output.left.rect, output.right.rect, model, output.disparity);
 	  }
 
 	  // Project disparity image to 3d point cloud
 	  if (flags & POINT_CLOUD) {
-		  StereoProcessor::processPoints(output.disparity, output.left.rect_color, output.left.color_encoding, model, output.points);
+		  SP.processPoints(output.disparity, output.left.rect_color, output.left.color_encoding, model, output.points);
 	  }
 
 	  // Project disparity image to 3d point cloud
 	  if (flags & POINT_CLOUD2) {
-	    StereoProcessor::processPoints2(output.disparity, output.left.rect_color, output.left.color_encoding, model, output.points2);
+	    SP.processPoints2(output.disparity, output.left.rect_color, output.left.color_encoding, model, output.points2);
 	  }
 
 	  return true;

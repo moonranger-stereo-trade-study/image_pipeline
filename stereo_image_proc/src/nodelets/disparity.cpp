@@ -56,6 +56,7 @@
 #include <dynamic_reconfigure/server.h>
 
 #include <stereo_image_proc/processor.h>
+#include <stereo_image_proc/process_disparity.h>
 
 namespace stereo_image_proc {
 
