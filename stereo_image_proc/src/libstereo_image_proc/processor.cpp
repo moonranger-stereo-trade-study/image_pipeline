@@ -69,7 +69,50 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
                                        const image_geometry::StereoCameraModel& model,
                                        stereo_msgs::DisparityImage& disparity) const
 {
-	ProcessDisparity::processDisparity(left_rect, right_rect, model, disparity, current_stereo_algorithm_, block_matcher_, sg_block_matcher_, disparity16_);
+	//ProcessDisparity::processDisp();//left_rect, right_rect, model, disparity, current_stereo_algorithm_);//, block_matcher_, sg_block_matcher_, disparity16_);
+
+	  // Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r.
+  static const int DPP = 16; // disparities per pixel
+  static const double inv_dpp = 1.0 / DPP;
+
+
+	// Block matcher produces 16-bit signed (fixed point) disparity image
+  if (current_stereo_algorithm_ == BM)
+#if CV_MAJOR_VERSION >= 3
+    block_matcher_->compute(left_rect, right_rect, disparity16_);
+  else
+    sg_block_matcher_->compute(left_rect, right_rect, disparity16_);
+#else
+    block_matcher_(left_rect, right_rect, disparity16_);
+  else
+    sg_block_matcher_(left_rect, right_rect, disparity16_);
+#endif
+
+  // Fill in DisparityImage image data, converting to 32-bit float
+  sensor_msgs::Image& dimage = disparity.image;
+  dimage.height = disparity16_.rows;
+  dimage.width = disparity16_.cols;
+  dimage.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+  dimage.step = dimage.width * sizeof(float);
+  dimage.data.resize(dimage.step * dimage.height);
+  cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
+  // We convert from fixed-point to float disparity and also adjust for any x-offset between
+  // the principal points: d = d_fp*inv_dpp - (cx_l - cx_r)
+  disparity16_.convertTo(dmat, dmat.type(), inv_dpp, -(model.left().cx() - model.right().cx()));
+  ROS_ASSERT(dmat.data == &dimage.data[0]);
+  /// @todo is_bigendian? :)
+
+  // Stereo parameters
+  disparity.f = model.right().fx();
+  disparity.T = model.baseline();
+
+  /// @todo Window of (potentially) valid disparities
+
+  // Disparity search range
+  disparity.min_disparity = getMinDisparity();
+  disparity.max_disparity = getMinDisparity() + getDisparityRange() - 1;
+  disparity.delta_d = inv_dpp;
+
 }
 
 inline bool isValidPoint(const cv::Vec3f& pt)
