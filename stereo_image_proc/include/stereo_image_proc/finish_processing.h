@@ -11,7 +11,6 @@
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include "stereo_image_proc/processor.h"
-#include "stereo_image_proc/process_disparity.h"
 
 
 namespace stereo_image_proc {
