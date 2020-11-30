@@ -12,10 +12,8 @@
 
 namespace stereo_image_proc {
 
-  //StereoProcessor SP;
-  //static 
   bool RectificationProcessing::rectificationProcessing(const sensor_msgs::ImageConstPtr& raw_image,
-                                const image_geometry::PinholeCamera& model,
+                                const image_geometry::PinholeCameraModel& model,
                        image_proc::ImageSet& output, int flags, image_proc::Processor mono_processor)
   {
 	  
