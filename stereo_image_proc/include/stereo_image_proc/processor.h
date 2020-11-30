@@ -43,6 +43,7 @@
 #include "stereo_image_proc/process_disparity.h"
 #include "stereo_image_proc/point_processing.h"
 #include "stereo_image_proc/points2_processing.h"
+#include "stereo_image_proc/rectification_processing.h"
 
 namespace stereo_image_proc {
 
