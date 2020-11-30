@@ -68,8 +68,9 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
                                        const image_geometry::StereoCameraModel& model,
                                        stereo_msgs::DisparityImage& disparity) const
 {
-	//ProcessDisparity::processDisp();//left_rect, right_rect, model, disparity, current_stereo_algorithm_);//, block_matcher_, sg_block_matcher_, disparity16_);
+	ProcessDisparity::processDisparity(left_rect, right_rect, model, disparity, current_stereo_algorithm_, block_matcher_, sg_block_matcher_, disparity16_, this);
 
+  /*
 	  // Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r.
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
@@ -111,7 +112,7 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
   disparity.min_disparity = getMinDisparity();
   disparity.max_disparity = getMinDisparity() + getDisparityRange() - 1;
   disparity.delta_d = inv_dpp;
-
+  */
 }
 
 inline bool isValidPoint(const cv::Vec3f& pt)
