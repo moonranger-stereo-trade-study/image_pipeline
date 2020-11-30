@@ -116,19 +116,20 @@ void StereoProcessor::processDisparity(const cv::Mat& left_rect, const cv::Mat& 
 }
 
 inline bool isValidPoint(const cv::Vec3f& pt)
-{
-  // Check both for disparities explicitly marked as invalid (where OpenCV maps pt.z to MISSING_Z)
-  // and zero disparities (point mapped to infinity).
-  return pt[2] != image_geometry::StereoCameraModel::MISSING_Z && !std::isinf(pt[2]);
-}
+  {
+          // Check both for disparities explicitly marked as invalid (where OpenCV maps pt.z to MISSING_Z)
+          // and zero disparities (point mapped to infinity).
+          return pt[2] != image_geometry::StereoCameraModel::MISSING_Z && !std::isinf(pt[2]);
+  }
 
 void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity,
                                     const cv::Mat& color, const std::string& encoding,
                                     const image_geometry::StereoCameraModel& model,
                                     sensor_msgs::PointCloud& points) const
 {
+  PointProcessing::pointProcessing(disparity, color, encoding, model, points, dense_points_);
   // Calculate dense point cloud
-  const sensor_msgs::Image& dimage = disparity.image;
+  /*const sensor_msgs::Image& dimage = disparity.image;
   const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
   model.projectDisparityImageTo3d(dmat, dense_points_, true);
 
@@ -196,7 +197,7 @@ void StereoProcessor::processPoints(const stereo_msgs::DisparityImage& disparity
   }
   else {
     ROS_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
-  }
+  }*/
 }
 
 void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparity,
