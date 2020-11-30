@@ -39,17 +39,19 @@
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
+#include "stereo_image_proc/finish_processing.h"
+#include "stereo_image_proc/process_disparity.h"
 
 namespace stereo_image_proc {
 
-struct StereoImageSet
+/*struct StereoImageSet
 {
   image_proc::ImageSet left;
   image_proc::ImageSet right;
   stereo_msgs::DisparityImage disparity;
   sensor_msgs::PointCloud points;
   sensor_msgs::PointCloud2 points2;
-};
+};*/
 
 class StereoProcessor
 {
@@ -66,11 +68,6 @@ public:
   {
 #endif
   }
-
-  enum StereoType
-  {
-    BM, SGBM
-  };
 
   enum {
     LEFT_MONO        = 1 << 0,
