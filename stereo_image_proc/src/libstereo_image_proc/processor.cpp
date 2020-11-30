@@ -59,7 +59,7 @@ bool StereoProcessor::process(const sensor_msgs::ImageConstPtr& left_raw,
   }
   if (!RectificationProcessing::rectificationProcessing(left_raw, model.left(), output.left, left_flags,mono_processor_))
     return false;
-  if (!RectificationProcessing::rectificationProcessing.process(right_raw, model.right(), output.right, right_flags >> 4, mono_processor_))
+  if (!RectificationProcessing::rectificationProcessing(right_raw, model.right(), output.right, right_flags >> 4, mono_processor_))
     return false;
   return FinishProcessing::finishProcessing(left_raw, right_raw, model, output, flags, this);
 }
