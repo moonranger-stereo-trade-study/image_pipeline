@@ -22,7 +22,7 @@ namespace stereo_image_proc {
   }
 
 
-  static void processPoints(const stereo_msgs::DisparityImage& disparity,
+  static void pointsProcessing(const stereo_msgs::DisparityImage& disparity,
                      const cv::Mat& color, const std::string& encoding,
                      const image_geometry::StereoCameraModel& model,
                      sensor_msgs::PointCloud& points, cv::Mat_<cv::Vec3f> dense_points)

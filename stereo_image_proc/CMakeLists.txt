@@ -26,7 +26,7 @@ include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
 add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
 
 # Nodelet library
-add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/libstereo_image_proc/process_disparity.cpp src/libstereo_image_proc/finish_processing.cpp src/libstereo_image_proc/point_processing.cpp src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)
+add_library(${PROJECT_NAME} src/libstereo_image_proc/processor.cpp src/libstereo_image_proc/process_disparity.cpp src/libstereo_image_proc/finish_processing.cpp src/libstereo_image_proc/point_processing.cpp src/libstereo_image_proc/points2_processing.cpp  src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
                                       ${OpenCV_LIBRARIES}
 )

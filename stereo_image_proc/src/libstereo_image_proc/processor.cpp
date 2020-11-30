@@ -204,7 +204,8 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
                                      const image_geometry::StereoCameraModel& model,
                                      sensor_msgs::PointCloud2& points) const
 {
-  // Calculate dense point cloud
+	Points2Processing::points2Processing(disparity, color, encoding, model, points, dense_points_);
+ /*// Calculate dense point cloud
   const sensor_msgs::Image& dimage = disparity.image;
   const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
   model.projectDisparityImageTo3d(dmat, dense_points_, true);
@@ -300,7 +301,7 @@ void StereoProcessor::processPoints2(const stereo_msgs::DisparityImage& disparit
   }
   else {
     ROS_WARN("Could not fill color channel of the point cloud, unrecognized encoding '%s'", encoding.c_str());
-  }
+  }*/
 }
 
 } //namespace stereo_image_proc
