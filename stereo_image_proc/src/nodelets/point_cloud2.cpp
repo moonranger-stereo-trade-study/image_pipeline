@@ -50,6 +50,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+#include "stereo_image_proc/points2_nodelet_proc.h"
 
 namespace stereo_image_proc {
 
@@ -161,18 +162,19 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
                                  const CameraInfoConstPtr& r_info_msg,
                                  const DisparityImageConstPtr& disp_msg)
 {
+  
   // Update the camera model
   model_.fromCameraInfo(l_info_msg, r_info_msg);
 
   // Calculate point cloud
   const Image& dimage = disp_msg->image;
   const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
-  model_.projectDisparityImageTo3d(dmat, points_mat_, true);
+  /*model_.projectDisparityImageTo3d(dmat, points_mat_, true);
   cv::Mat_<cv::Vec3f> mat = points_mat_;
 
-  // Fill in new PointCloud2 message (2D image-like layout)
-  PointCloud2Ptr points_msg = boost::make_shared<PointCloud2>();
-  points_msg->header = disp_msg->header;
+  // Fill in new PointCloud2 message (2D image-like layout)*/
+  PointCloud2Ptr points_msg = stereo_image_proc::Points2NodeletProcessing::points2Processing(dmat, points_mat_, model_, disp_msg, l_image_msg);// boost::make_shared<PointCloud2>();
+  /*points_msg->header = disp_msg->header;
   points_msg->height = mat.rows;
   points_msg->width  = mat.cols;
   points_msg->is_bigendian = false;
@@ -260,7 +262,7 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
   {
     NODELET_WARN_THROTTLE(30, "Could not fill color channel of the point cloud, "
                           "unsupported encoding '%s'", encoding.c_str());
-  }
+  }*/
 
   pub_points2_.publish(points_msg);
 }
