@@ -31,6 +31,7 @@ add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
 add_library(${PROJECT_NAME} src/libimage_proc/processor.cpp
                                 src/nodelets/debayer.cpp
                                 src/nodelets/rectify.cpp
+				src/nodelets/rectify_with_halide.cpp
                                 src/nodelets/resize.cpp
                                 src/nodelets/crop_decimate.cpp
                                 src/libimage_proc/advertisement_checker.cpp
