@@ -4,6 +4,8 @@ project(stereo_image_proc)
 find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_msgs)
 find_package(Boost REQUIRED COMPONENTS thread)
 
+#find_package(Halide REQUIRED)
+
 if(cv_bridge_VERSION VERSION_GREATER "1.12.0")
   add_compile_options(-std=c++11)
 endif()
@@ -19,8 +21,17 @@ catkin_package(
 
 include_directories(include)
 
+# Halide include dirs
+set(HALIDE_DIR "~/15618/Halide/include/")
+set(HALIDE_TOOLS "~/15618/Halide/tools/")
+set(HALIDE_BIN "~/15618/Halide/bin/")
+
+# Halide compiler flags
+set(HALIDE_FLAGS "-lhalide `libpng-config --cflags --ldflags` -ljpeg -lpthread -ldl -std=c++11") 
+add_definitions(${HALIDE_FLAGS})
+
 find_package(OpenCV REQUIRED)
-include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${HALIDE_DIR} ${HALIDE_TOOLS})
 
 # See note in image_proc/CMakeLists.txt
 add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
@@ -39,6 +50,10 @@ install(TARGETS ${PROJECT_NAME}
 install(FILES nodelet_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+#add_executable(basic_blur src/libstereo_image_proc/basic_blur.cpp)
+#LD_LIBRARY_PATH=$(HALIDE_DIR)/bin/ ./$(target)
+#target_link_libraries(basic_blur ${HALIDE_DIR}/bin/)
 
 # Standalone node
 add_executable(stereoimageproc_exe src/nodes/stereo_image_proc.cpp)
