@@ -5,6 +5,7 @@
 using namespace Halide::Tools;
 
 int main(int argc, char **argv) {
+
 	Halide::Buffer<float> input = load_and_convert_image("rgb.png");
 	
 	Halide::Var x, y, c;
