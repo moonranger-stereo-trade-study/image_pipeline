@@ -29,7 +29,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
 
-
+#include "stereo_image_proc/basic_blur.h"
 
 namespace stereo_image_proc {
 	

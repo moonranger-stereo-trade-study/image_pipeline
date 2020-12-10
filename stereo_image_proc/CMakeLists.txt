@@ -4,6 +4,7 @@ project(stereo_image_proc)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
+set(Halide_DIR "/home/mrak/15618/Halide-install/lib/cmake/Halide/")
 
 find_package(catkin REQUIRED cv_bridge dynamic_reconfigure image_geometry image_proc image_transport message_filters nodelet sensor_msgs stereo_msgs)
 find_package(Boost REQUIRED COMPONENTS thread)
@@ -32,10 +33,14 @@ include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${HALIDE_DIR} 
 add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
 
 # Nodelet library
-add_library(${PROJECT_NAME} src/libstereo_image_proc/rectification_processing.cpp src/libstereo_image_proc/processor.cpp  src/libstereo_image_proc/points2_nodelet_proc.cpp  src/libstereo_image_proc/process_disparity.cpp src/libstereo_image_proc/finish_processing.cpp src/libstereo_image_proc/point_processing.cpp src/libstereo_image_proc/points2_processing.cpp  src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp)
+add_library(${PROJECT_NAME} src/libstereo_image_proc/rectification_processing.cpp src/libstereo_image_proc/processor.cpp  src/libstereo_image_proc/points2_nodelet_proc.cpp  src/libstereo_image_proc/process_disparity.cpp src/libstereo_image_proc/finish_processing.cpp src/libstereo_image_proc/point_processing.cpp src/libstereo_image_proc/points2_processing.cpp  src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp src/libstereo_image_proc/basic_blur.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
                                       ${OpenCV_LIBRARIES}
+									  Halide::Halide
+									  Halide::ImageIO
+									  Halide::Tools
 )
+
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
