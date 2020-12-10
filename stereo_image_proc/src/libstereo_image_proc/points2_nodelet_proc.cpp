@@ -30,11 +30,14 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 
+
 namespace stereo_image_proc {
+	
 
 using namespace sensor_msgs;
 using namespace stereo_msgs;
 using namespace message_filters::sync_policies;
+int counter=0;
 
   inline bool isValidPoint(const cv::Vec3f& pt)
   {
@@ -51,6 +54,7 @@ using namespace message_filters::sync_policies;
   //ROS_INFO("In the split NODELET_POINTS2\n");
   model.projectDisparityImageTo3d(dmat, points_mat, true);
 
+  basic_blur(counter++);
   cv::Mat_<cv::Vec3f> mat = points_mat;
 
   // Fill in new PointCloud2 message (2D image-like layout)
