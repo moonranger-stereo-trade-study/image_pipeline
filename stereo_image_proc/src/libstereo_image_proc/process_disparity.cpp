@@ -63,6 +63,41 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
     sg_block_matcher(left_rect, right_rect, disparity16);
 #endif
 
+ // std::cout << "HELLO\n" << c << "," << r << "\n";
+
+  // Stereo parameters
+  disparity.f = model.right().fx();
+  disparity.T = model.baseline();
+  
+  /// @todo Window of (potentially) valid disparities
+
+  // Disparity search range
+  disparity.min_disparity = SP.getMinDisparity();
+  disparity.max_disparity = SP.getMinDisparity() + SP.getDisparityRange() - 1;
+  disparity.delta_d = inv_dpp;
+
+  int half_max = disparity.max_disparity/2 +1;
+  //search params
+  int c = left_rect.cols;
+  int r = left_rect.rows;
+
+  //search
+  for(int i=0; i<r; i++)
+  {
+	  for int(int j=0; j<c;j++)
+	  {
+		  int min_dif = c;
+		  int ind = j;
+		  for(int l = j-half_max; l<j+half_max; l++)
+		  {
+			  if(l<0 || l>-c)
+				  continue;
+
+		  }
+	  }
+  }
+
+
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
   dimage.height = disparity16.rows;
@@ -76,17 +111,9 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   disparity16.convertTo(dmat, dmat.type(), inv_dpp, -(model.left().cx() - model.right().cx()));
   ROS_ASSERT(dmat.data == &dimage.data[0]);
   /// @todo is_bigendian? :)
-  
-  // Stereo parameters
-  disparity.f = model.right().fx();
-  disparity.T = model.baseline();
-  
-  /// @todo Window of (potentially) valid disparities
 
-  // Disparity search range
-  disparity.min_disparity = SP.getMinDisparity();
-  disparity.max_disparity = SP.getMinDisparity() + SP.getDisparityRange() - 1;
-  disparity.delta_d = inv_dpp;
+
+  
 }
 
 } //namespace stereo_image_proc
