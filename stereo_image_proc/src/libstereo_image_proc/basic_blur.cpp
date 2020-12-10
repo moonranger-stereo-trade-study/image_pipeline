@@ -1,10 +1,11 @@
 #include "Halide.h"
 #include <stdio.h>
 #include "halide_image_io.h"
+#include "stereo_image_proc/blur.h"
 
 using namespace Halide::Tools;
 
-int main(int argc, char **argv) {
+int basic_blur(int i) {
 
 	Halide::Buffer<float> input = load_and_convert_image("rgb.png");
 	
@@ -21,6 +22,8 @@ int main(int argc, char **argv) {
 	Halide::Buffer<float> output(input.width() - 2, input.height() - 2, input.channels());
 	output.set_min(1, 1);
 	blury.realize(output);
+	string s ="blurred";
+	s = s + i ".png";
 	convert_and_save_image(output, "blurred.png");
 	printf("Success \n");
 	return 0;
