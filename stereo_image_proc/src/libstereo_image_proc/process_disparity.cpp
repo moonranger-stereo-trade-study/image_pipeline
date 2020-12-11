@@ -81,18 +81,38 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   int c = left_rect.cols;
   int r = left_rect.rows;
 
+
+  int half_height_to_match = 75; //AKA hhtm 
   //search
   for(int i=0; i<r; i++)
   {
-	  for int(int j=0; j<c;j++)
+	  for(int j=0; j<c-2;j++) //do not try to match left images' col0
 	  {
-		  int min_dif = c;
-		  int ind = j;
+		  int min_dif = 1000000000; //TODO make it a flag
+		  int ind = j; //matching index on the right
 		  for(int l = j-half_max; l<j+half_max; l++)
 		  {
-			  if(l<0 || l>-c)
+			  //only search realistic indices
+			  if(l<0 || l>c-2)
 				  continue;
-
+			  //TODO include min_disparity
+			  int temp_dif = 0;
+			  //go through the columns of l, l+1, and l+2 for hhtm 
+			  for(int h=-half_height_to_match; h<half_height_to_match; h++)
+			  {
+				  if(h<0 || h>r)
+					  continue;
+				  int pix_dif_0 = left_rect.at<int>(h, j) - right_rect.at<int>(h, l);
+				  int pix_dif_1 =  left_rect.at<int>(h, j+1) - right_rect.at<int>(h, l+1);
+				  int pix_dif_2 =  left_rect.at<int>(h, j+2) - right_rect.at<int>(h, l+2);
+				  temp_dif += pix_dif_0*pix_dif_0 + pix_dif_1*pix_dif_1 + pix_dif_2*pix_dif_2;
+			  }
+			  if(temp_dif<min_dif)
+			  {
+				  min_dif=temp_dif;
+				  ind=l;
+			  }
+			disparity16.at<int>(i, ind) = 16*(j-ind);
 		  }
 	  }
   }

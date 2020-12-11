@@ -48,7 +48,7 @@ using namespace message_filters::sync_policies;
 				 image_geometry::StereoCameraModel model,
 				 const DisparityImageConstPtr& disp_msg, const ImageConstPtr& l_image_msg)
   {
-  //ROS_INFO("In the split NODELET_POINTS2\n");
+  ROS_INFO("In the split NODELET_POINTS2\n");
   model.projectDisparityImageTo3d(dmat, points_mat, true);
 
   cv::Mat_<cv::Vec3f> mat = points_mat;
