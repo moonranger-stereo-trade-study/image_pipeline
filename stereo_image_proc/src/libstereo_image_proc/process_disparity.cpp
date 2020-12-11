@@ -51,8 +51,9 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
 
+  disparity16 = cv::Mat::zeros(left_rect.rows, left_rect.cols, left_rect.type());
   // Block matcher produces 16-bit signed (fixed point) disparity image
-  if (current_stereo_algorithm == BM)
+/*  if (current_stereo_algorithm == BM)
 #if CV_MAJOR_VERSION >= 3
     block_matcher->compute(left_rect, right_rect, disparity16);
   else
@@ -61,7 +62,7 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
     block_matcher(left_rect, right_rect, disparity16);
   else
     sg_block_matcher(left_rect, right_rect, disparity16);
-#endif
+#endif */
 
  // std::cout << "HELLO\n" << c << "," << r << "\n";
 
@@ -76,18 +77,27 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   disparity.max_disparity = SP.getMinDisparity() + SP.getDisparityRange() - 1;
   disparity.delta_d = inv_dpp;
 
-  int half_max = disparity.max_disparity/2 +1;
+  int half_max = 5;
   //search params
-  int c = left_rect.cols;
-  int r = left_rect.rows;
+  int c = disparity16.cols;
+  int r = disparity16.rows;
+  int stride = 1;
+
+  std::cout << r << left_rect.type() << "\n";
 
 
-  int half_height_to_match = 75; //AKA hhtm 
+  int half_height_to_match = 2; //AKA hhtm 
   //search
-  for(int i=0; i<r; i++)
+  // int pix_dif_0 = left_rect.at<int>(0, 1) - right_rect.at<int>(0, 1);
+  for(int i=0; i<r; i+=stride)
   {
-	  for(int j=0; j<c-2;j++) //do not try to match left images' col0
+	  for(int j=0; j<c;j+=stride) //do not try to match left images' col0
 	  {
+		  //TODO remove the below 2 lines
+		  //disparity16.at<char>(i,j)= left_rect.at<char>(i,j);
+		  //continue;
+
+
 		  int min_dif = 1000000000; //TODO make it a flag
 		  int ind = j; //matching index on the right
 		  for(int l = j-half_max; l<j+half_max; l++)
@@ -102,9 +112,9 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
 			  {
 				  if(h<0 || h>r)
 					  continue;
-				  int pix_dif_0 = left_rect.at<int>(h, j) - right_rect.at<int>(h, l);
-				  int pix_dif_1 =  left_rect.at<int>(h, j+1) - right_rect.at<int>(h, l+1);
-				  int pix_dif_2 =  left_rect.at<int>(h, j+2) - right_rect.at<int>(h, l+2);
+				  int pix_dif_0 = left_rect.at<char>(h, j) - right_rect.at<char>(h, l);
+				  int pix_dif_1 =  left_rect.at<char>(h, j+1) - right_rect.at<char>(h, l+1);
+				  int pix_dif_2 =  left_rect.at<char>(h, j+2) - right_rect.at<char>(h, l+2);
 				  temp_dif += pix_dif_0*pix_dif_0 + pix_dif_1*pix_dif_1 + pix_dif_2*pix_dif_2;
 			  }
 			  if(temp_dif<min_dif)
@@ -112,8 +122,8 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
 				  min_dif=temp_dif;
 				  ind=l;
 			  }
-			disparity16.at<int>(i, ind) = 16*(j-ind);
-		  }
+		}
+		disparity16.at<char>(i, j) = (j-ind);
 	  }
   }
 
