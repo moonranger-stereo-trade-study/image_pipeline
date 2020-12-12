@@ -31,6 +31,8 @@
 
 #include "stereo_image_proc/basic_blur.h"
 
+#include "stereo_image_proc/points2_halide.h"
+
 namespace stereo_image_proc {
 	
 
@@ -52,9 +54,9 @@ int counter=0;
 				 const DisparityImageConstPtr& disp_msg, const ImageConstPtr& l_image_msg)
   {
   //ROS_INFO("In the split NODELET_POINTS2\n");
+  //TODO: Look at this!!
   model.projectDisparityImageTo3d(dmat, points_mat, true);
 
-  basic_blur(counter++);
   cv::Mat_<cv::Vec3f> mat = points_mat;
 
   // Fill in new PointCloud2 message (2D image-like layout)
@@ -75,7 +77,11 @@ int counter=0;
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*points_msg, "g");
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*points_msg, "b");
 
+
+ 
   float bad_point = std::numeric_limits<float>::quiet_NaN ();
+  points2_in_halide(mat);
+  /*  
   for (int v = 0; v < mat.rows; ++v)
   {
     for (int u = 0; u < mat.cols; ++u, ++iter_x, ++iter_y, ++iter_z)
@@ -93,7 +99,7 @@ int counter=0;
       }
     }
   }
-
+  */
   // Fill in color
   namespace enc = sensor_msgs::image_encodings;
   const std::string& encoding = l_image_msg->encoding;
@@ -104,11 +110,16 @@ int counter=0;
                                   l_image_msg->step);
     for (int v = 0; v < mat.rows; ++v)
     {
-      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b)
+      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b, ++iter_x, ++iter_y, ++iter_z)
       {
         uint8_t g = color(v,u);
         *iter_r = *iter_g = *iter_b = g;
-      }
+        
+		*iter_x = mat(v, u)[0];
+        *iter_y = mat(v, u)[1];
+        *iter_z = mat(v, u)[2];
+      
+	  }
     }
   }
   else if (encoding == enc::RGB8)
@@ -118,13 +129,17 @@ int counter=0;
                                     l_image_msg->step);
     for (int v = 0; v < mat.rows; ++v)
     {
-      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b)
+      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b, ++iter_x, ++iter_y, ++iter_z)
       {
         const cv::Vec3b& rgb = color(v,u);
         *iter_r = rgb[0];
         *iter_g = rgb[1];
         *iter_b = rgb[2];
-      }
+        
+		*iter_x = mat(v, u)[0];
+        *iter_y = mat(v, u)[1];
+        *iter_z = mat(v, u)[2];
+	  }
     }
   }
   else if (encoding == enc::BGR8)
@@ -134,18 +149,33 @@ int counter=0;
                                     l_image_msg->step);
     for (int v = 0; v < mat.rows; ++v)
     {
-      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b)
+      for (int u = 0; u < mat.cols; ++u, ++iter_r, ++iter_g, ++iter_b, ++iter_x, ++iter_y, ++iter_z)
       {
         const cv::Vec3b& bgr = color(v,u);
         *iter_r = bgr[2];
         *iter_g = bgr[1];
         *iter_b = bgr[0];
-      }
+      
+        *iter_x = mat(v, u)[0];
+        *iter_y = mat(v, u)[1];
+        *iter_z = mat(v, u)[2];
+	  }
     }
   }
   else
   {
-    ROS_WARN("Could not fill color channel of the point cloud, "
+  	
+	for (int v = 0; v < mat.rows; ++v)
+  	{
+    	for (int u = 0; u < mat.cols; ++u, ++iter_x, ++iter_y, ++iter_z)
+    	{
+			*iter_x = mat(v, u)[0];
+			*iter_y = mat(v, u)[1];
+			*iter_z = mat(v, u)[2];
+		}
+	}
+	
+	 ROS_WARN("Could not fill color channel of the point cloud, "
                           "unsupported encoding '%s'", encoding.c_str());
   }
   return points_msg;

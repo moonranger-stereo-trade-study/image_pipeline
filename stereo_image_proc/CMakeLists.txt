@@ -33,7 +33,7 @@ include_directories(${catkin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${HALIDE_DIR} 
 add_definitions(-DOPENCV_TRAITS_ENABLE_DEPRECATED)
 
 # Nodelet library
-add_library(${PROJECT_NAME} src/libstereo_image_proc/rectification_processing.cpp src/libstereo_image_proc/processor.cpp  src/libstereo_image_proc/points2_nodelet_proc.cpp  src/libstereo_image_proc/process_disparity.cpp src/libstereo_image_proc/finish_processing.cpp src/libstereo_image_proc/point_processing.cpp src/libstereo_image_proc/points2_processing.cpp  src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp src/libstereo_image_proc/basic_blur.cpp)
+add_library(${PROJECT_NAME} src/libstereo_image_proc/rectification_processing.cpp src/libstereo_image_proc/processor.cpp  src/libstereo_image_proc/points2_nodelet_proc.cpp  src/libstereo_image_proc/process_disparity.cpp src/libstereo_image_proc/finish_processing.cpp src/libstereo_image_proc/point_processing.cpp src/libstereo_image_proc/points2_processing.cpp  src/nodelets/disparity.cpp src/nodelets/point_cloud2.cpp src/libstereo_image_proc/points2_halide.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
                                       ${OpenCV_LIBRARIES}
 									  Halide::Halide
@@ -51,8 +51,8 @@ install(FILES nodelet_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-add_executable(basic_blur src/libstereo_image_proc/basic_blur.cpp)
-target_link_libraries(basic_blur PRIVATE Halide::Halide Halide::ImageIO)
+#add_executable(basic_blur src/libstereo_image_proc/basic_blur.cpp)
+#target_link_libraries(basic_blur PRIVATE Halide::Halide Halide::ImageIO)
 
 # Standalone node
 add_executable(stereoimageproc_exe src/nodes/stereo_image_proc.cpp)

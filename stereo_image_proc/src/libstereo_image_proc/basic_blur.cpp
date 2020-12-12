@@ -5,7 +5,7 @@
 #include <string>
 
 using namespace Halide::Tools;
-
+/*
 int basic_blur(int i) {
 
 	printf("From basic_blur.cpp \n");
@@ -32,4 +32,4 @@ int basic_blur(int i) {
 }
 int main(int argv, char **argc) {
 	return 0;
-}
+}*/
