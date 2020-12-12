@@ -66,105 +66,73 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
     sg_block_matcher(left_rect, right_rect, disparity16);
 #endif*/ 
 
-  //std::cout << "HELLO\n" << disparity16.type() << "\n";
-  /*for(int row=0; row<480; row++)
-  {
-	for(int col=0; col<640;col++)
-		  std::cout << disparity16.at<int16_t>(row,col) << " ";
-  	std::cout << "\n";
-  }*/
-
-  // Stereo parameters
-  disparity.f = model.right().fx();
-  disparity.T = model.baseline();
-  
-  /// @todo Window of (potentially) valid disparities
-
   // Disparity search range
   disparity.min_disparity = SP.getMinDisparity();
   disparity.max_disparity = SP.getMinDisparity() + SP.getDisparityRange() - 1;
   disparity.delta_d = inv_dpp;
+  int max_d = disparity.max_disparity; //the actual value used in the algorithm
+  //We do not include min_disparity because min_disparity is 0
 
-  int half_max = 30;
   //search params
   int c = disparity16.cols;
   int r = disparity16.rows;
   int part = 2;
   int stride = 1;
+  int half_height_to_match = 3; //AKA hhtm 
+  int half_width_to_match = 3;
 
-  //std::cout << r << left_rect.type() << "\n";
-
-
-  int half_height_to_match = 5; //AKA hhtm 
-  int half_width_to_match = 5;
-
-  int half_b = 5;
-  //First, blur the images
-  /*for(int i=0; i<r; i++)
-	  for(int j=0; j<c;j++)
-	  {
-		  float left_val=0;
-		  float right_val=0;
-		  for(int h=i-half_b;h<i+half_b&&h<r;h++)
-		  {
-			  if(h<0)
-				  continue;
-			  for(int k=j-half_b;k<j+half_b&&k<c;k++)
-			  {
-				  if(k<0)
-					  continue;
-				  left_val += ((float)left_rect.at<char>(h,k))/((float)(half_b*2+1));
-				  right_val += ((float)right_rect.at<char>(h,k))/((float)(half_b*2+1));
-			  }
-				                  
-		  }
-		  left_rec.at<char>(i,j) = (char) left_val;
-		  right_rec.at<char>(i,j) = (char) right_val;
-	  }*/
-  		
   std::cout << "HI\n";
-  //search
-  // int pix_dif_0 = left_rect.at<int>(0, 1) - right_rect.at<int>(0, 1);
-  for(int i=0; i < r; i++)
+  int64_t int_mx = 0x7FFFFFFFFFFFFFFF;
+  int64_t min_dif = int_mx; //for one pixel in the left image, what is the difference
+  						//between its surrounding pixels and the surrounding 
+						//pixels around the closest match in the right image
+  //Go from top to bottom in the image
+  for(int i=0; i < r/2; i++)
   {
-	  for(int j=0; j < c; j+=stride) //do not try to match left images' col0
+	  for(int j=max_d; j < c; j+=stride) //go from left to right. Start at column ~60 in LEFT image because the columns <~60 will not
+		  				//match left images' cols that will not match with anything in the right
+						//image. TODO Using max_d because it is conveniently close to 60 in the example data
 	  {
-		  //TODO remove the below 2 lines
-		  //disparity16.at<char>(i,j)= left_rect.at<char>(i,j);
-		  //continue;
-
-
-		  int64_t min_dif = 0x7FFFFFFFFFFFFFFF; //TODO make it a flag
-		  int ind = j+1; //matching index on the right
-		  for(int l = j-half_max; l<j+half_max; l++)
+		  
+		  min_dif = int_mx; // minimum difference, pixel-wise between a box around left_rect(i,j) 
+		  			// and boxes around potential matching indices in the right image
+					// The box is (i*half_height_to_match+1) by (2*half_width_to_match+1) (the one corresponding to min_diff)
+					// This is actually storing a sum of pixel-wise squared differences
+		  int ind = j+1; //index of pixel matchng left_rect(i,j) in the right image
+			
+		  //search for a match along the same horizontal line in the right image, going at most max_d left and right from the pixel (i,j)
+		  for(int rii = j-max_d; rii<j+max_d; rii++) //search up to max_d (disparity) (rii for right image index)
 		  {
 			  //only search realistic indices
-			  if(l<0 || l>c)
+			  if(rii<0 || rii>c)
 				  continue;
-			  //TODO include min_disparity
-			  int64_t temp_dif = 0;
-			  //go through the columns of l, l+1, and l+2 for hhtm 
+			  
+			  int64_t temp_dif = 0; //store the total sum of squared differences for the square around (i,l)
+			  //go though the box around right_image(i, rii) from top to bottom
 			  for(int h=i-half_height_to_match; h<i+half_height_to_match; h++)
 			  {
+				  //only use realistic indices
 				  if(h<0 || h>r)
 					  continue;
-				  for(int k=l-half_width_to_match; k<l+half_width_to_match; k++)
+				  //add up squared differences right_image(i, rii) from left to right
+				  for(int k=rii-half_width_to_match; k<rii+half_width_to_match; k++)
 				  {
+					//only use realistic indices
 					if(k<0 || k>c)
 						continue;
-				  	int64_t pix_dif_0 = left_rect.at<char>(h, k-l+j) - right_rect.at<char>(h, k);
-					temp_dif += pix_dif_0*pix_dif_0;
+					//find differences betweent the matching pixels in the box around (i,j) and (i, rii)
+				  	int64_t pix_dif_0 = left_rect.at<char>(h, k-rii+j) - right_rect.at<char>(h, k);
+					temp_dif += pix_dif_0*pix_dif_0; //add to total sum of squared differences
 				  }
 			  }
+			  //check if this box could have the minimum difference 
 			  if(temp_dif<min_dif)
 			  {
 				  min_dif=temp_dif;
-				  //std::cout << "YOYO\n";
 				  ind=l;
 			  }
 		}
-		int16_t dispy = 32*(int16_t)(j-ind);
-		//std::cout << dispy << "\n";
+		int16_t dispy = 16*(int16_t)(j-ind);
 		//if(dispy < 0)
 		//	dispy=dispy*(-1);
 		//if(dispy < 60)
@@ -174,12 +142,10 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
 	  }
   }
   std::cout << "HELLOOO\n";
-   /*for(int row=0; row<480; row++)
-   {
-   	for(int col=0; col<640;col++)
-   		std::cout << disparity16.at<int16_t>(row,col) << " ";
-        std::cout << "\n";
-   }*/
+
+  // Other Stereo parameters
+  disparity.f = model.right().fx();
+  disparity.T = model.baseline();
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
