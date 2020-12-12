@@ -51,7 +51,7 @@ int counter=0;
 				 image_geometry::StereoCameraModel model,
 				 const DisparityImageConstPtr& disp_msg, const ImageConstPtr& l_image_msg)
   {
-  //ROS_INFO("In the split NODELET_POINTS2\n");
+  ROS_INFO("In the split NODELET_POINTS2\n");
   model.projectDisparityImageTo3d(dmat, points_mat, true);
 
   //basic_blur(counter++);
