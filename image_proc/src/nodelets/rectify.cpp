@@ -43,6 +43,7 @@
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <image_proc/RectifyConfig.h>
+#include "image_proc/rectify_with_halide.h"
 
 namespace image_proc {
 
@@ -113,6 +114,9 @@ void RectifyNodelet::connectCb()
 void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
                              const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
+
+
+  // ROS_ERROR("HEY I AM IN RECTIFY\n");
   // Verify camera is actually calibrated
   if (info_msg->K[0] == 0.0) {
     NODELET_ERROR_THROTTLE(30, "Rectified topic '%s' requested but camera publishing '%s' "
@@ -138,7 +142,8 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
     return;
   }
 
-  // Update the camera model
+
+  /*// Update the camera model
   model_.fromCameraInfo(info_msg);
   
   // Create cv::Mat views onto both buffers
@@ -154,7 +159,9 @@ void RectifyNodelet::imageCb(const sensor_msgs::ImageConstPtr& image_msg,
   model_.rectifyImage(image, rect, interpolation);
 
   // Allocate new rectified image message
-  sensor_msgs::ImagePtr rect_msg = cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg();
+  sensor_msgs::ImagePtr rect_msg = cv_bridge::CvImage(image_msg->header, image_msg->encoding, rect).toImageMsg();*/
+  boost::lock_guard<boost::recursive_mutex> lock(config_mutex_); //TODO unlock?
+  sensor_msgs::ImagePtr rect_msg = RectifyWithHalide::rectifyWithHalide(image_msg, info_msg, model_, config_);
   pub_rect_.publish(rect_msg);
 }
 
