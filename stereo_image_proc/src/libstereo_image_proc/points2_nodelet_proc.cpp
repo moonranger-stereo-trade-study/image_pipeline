@@ -54,7 +54,7 @@ int counter=0;
   //ROS_INFO("In the split NODELET_POINTS2\n");
   model.projectDisparityImageTo3d(dmat, points_mat, true);
 
-  basic_blur(counter++);
+  //basic_blur(counter++);
   cv::Mat_<cv::Vec3f> mat = points_mat;
 
   // Fill in new PointCloud2 message (2D image-like layout)
