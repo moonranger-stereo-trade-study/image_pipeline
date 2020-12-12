@@ -51,9 +51,11 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
 
-  disparity16 = cv::Mat::zeros(left_rect.rows, left_rect.cols, left_rect.type());
+  disparity16 = cv::Mat::zeros(left_rect.rows, left_rect.cols, CV_16S);
+  cv::Mat_<char> left_rec = cv::Mat::zeros(left_rect.rows, left_rect.cols, CV_8U);
+  cv::Mat_<char> right_rec = cv::Mat::zeros(left_rect.rows, left_rect.cols, CV_8U);
   // Block matcher produces 16-bit signed (fixed point) disparity image
-/*  if (current_stereo_algorithm == BM)
+  /*if (current_stereo_algorithm == BM)
 #if CV_MAJOR_VERSION >= 3
     block_matcher->compute(left_rect, right_rect, disparity16);
   else
@@ -62,9 +64,15 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
     block_matcher(left_rect, right_rect, disparity16);
   else
     sg_block_matcher(left_rect, right_rect, disparity16);
-#endif */
+#endif*/ 
 
- // std::cout << "HELLO\n" << c << "," << r << "\n";
+  //std::cout << "HELLO\n" << disparity16.type() << "\n";
+  /*for(int row=0; row<480; row++)
+  {
+	for(int col=0; col<640;col++)
+		  std::cout << disparity16.at<int16_t>(row,col) << " ";
+  	std::cout << "\n";
+  }*/
 
   // Stereo parameters
   disparity.f = model.right().fx();
@@ -77,56 +85,101 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   disparity.max_disparity = SP.getMinDisparity() + SP.getDisparityRange() - 1;
   disparity.delta_d = inv_dpp;
 
-  int half_max = 5;
+  int half_max = 30;
   //search params
   int c = disparity16.cols;
   int r = disparity16.rows;
+  int part = 2;
   int stride = 1;
 
-  std::cout << r << left_rect.type() << "\n";
+  //std::cout << r << left_rect.type() << "\n";
 
 
-  int half_height_to_match = 2; //AKA hhtm 
+  int half_height_to_match = 5; //AKA hhtm 
+  int half_width_to_match = 5;
+
+  int half_b = 5;
+  //First, blur the images
+  /*for(int i=0; i<r; i++)
+	  for(int j=0; j<c;j++)
+	  {
+		  float left_val=0;
+		  float right_val=0;
+		  for(int h=i-half_b;h<i+half_b&&h<r;h++)
+		  {
+			  if(h<0)
+				  continue;
+			  for(int k=j-half_b;k<j+half_b&&k<c;k++)
+			  {
+				  if(k<0)
+					  continue;
+				  left_val += ((float)left_rect.at<char>(h,k))/((float)(half_b*2+1));
+				  right_val += ((float)right_rect.at<char>(h,k))/((float)(half_b*2+1));
+			  }
+				                  
+		  }
+		  left_rec.at<char>(i,j) = (char) left_val;
+		  right_rec.at<char>(i,j) = (char) right_val;
+	  }*/
+  		
+  std::cout << "HI\n";
   //search
   // int pix_dif_0 = left_rect.at<int>(0, 1) - right_rect.at<int>(0, 1);
-  for(int i=0; i<r; i+=stride)
+  for(int i=0; i < r; i++)
   {
-	  for(int j=0; j<c;j+=stride) //do not try to match left images' col0
+	  for(int j=0; j < c; j+=stride) //do not try to match left images' col0
 	  {
 		  //TODO remove the below 2 lines
 		  //disparity16.at<char>(i,j)= left_rect.at<char>(i,j);
 		  //continue;
 
 
-		  int min_dif = 1000000000; //TODO make it a flag
-		  int ind = j; //matching index on the right
+		  int64_t min_dif = 0x7FFFFFFFFFFFFFFF; //TODO make it a flag
+		  int ind = j+1; //matching index on the right
 		  for(int l = j-half_max; l<j+half_max; l++)
 		  {
 			  //only search realistic indices
-			  if(l<0 || l>c-2)
+			  if(l<0 || l>c)
 				  continue;
 			  //TODO include min_disparity
-			  int temp_dif = 0;
+			  int64_t temp_dif = 0;
 			  //go through the columns of l, l+1, and l+2 for hhtm 
-			  for(int h=-half_height_to_match; h<half_height_to_match; h++)
+			  for(int h=i-half_height_to_match; h<i+half_height_to_match; h++)
 			  {
 				  if(h<0 || h>r)
 					  continue;
-				  int pix_dif_0 = left_rect.at<char>(h, j) - right_rect.at<char>(h, l);
-				  int pix_dif_1 =  left_rect.at<char>(h, j+1) - right_rect.at<char>(h, l+1);
-				  int pix_dif_2 =  left_rect.at<char>(h, j+2) - right_rect.at<char>(h, l+2);
-				  temp_dif += pix_dif_0*pix_dif_0 + pix_dif_1*pix_dif_1 + pix_dif_2*pix_dif_2;
+				  for(int k=l-half_width_to_match; k<l+half_width_to_match; k++)
+				  {
+					if(k<0 || k>c)
+						continue;
+				  	int64_t pix_dif_0 = left_rect.at<char>(h, k-l+j) - right_rect.at<char>(h, k);
+					temp_dif += pix_dif_0*pix_dif_0;
+				  }
 			  }
 			  if(temp_dif<min_dif)
 			  {
 				  min_dif=temp_dif;
+				  //std::cout << "YOYO\n";
 				  ind=l;
 			  }
 		}
-		disparity16.at<char>(i, j) = (j-ind);
+		int16_t dispy = 32*(int16_t)(j-ind);
+		//std::cout << dispy << "\n";
+		//if(dispy < 0)
+		//	dispy=dispy*(-1);
+		//if(dispy < 60)
+		disparity16.at<int16_t>(i, j) = dispy;
+		//else
+		//	disparity16.at<int16_t>(i, j) = 60;
 	  }
   }
-
+  std::cout << "HELLOOO\n";
+   /*for(int row=0; row<480; row++)
+   {
+   	for(int col=0; col<640;col++)
+   		std::cout << disparity16.at<int16_t>(row,col) << " ";
+        std::cout << "\n";
+   }*/
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
