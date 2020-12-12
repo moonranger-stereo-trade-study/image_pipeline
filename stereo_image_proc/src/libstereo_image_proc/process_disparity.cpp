@@ -37,6 +37,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
 #include <limits>
+#include <ros/time.h>
 
 namespace stereo_image_proc {
 
@@ -70,7 +71,7 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   disparity.min_disparity = SP.getMinDisparity();
   disparity.max_disparity = SP.getMinDisparity() + SP.getDisparityRange() - 1;
   disparity.delta_d = inv_dpp;
-  int max_d = disparity.max_disparity; //the actual value used in the algorithm
+  int max_d = 60; //the actual max disparity value used in the algorithm
   //We do not include min_disparity because min_disparity is 0
 
   //search params
@@ -81,17 +82,18 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   int half_height_to_match = 3; //AKA hhtm 
   int half_width_to_match = 3;
 
-  std::cout << "HI\n";
+  //std::cout << "HI\n";
   int64_t int_mx = 0x7FFFFFFFFFFFFFFF;
   int64_t min_dif = int_mx; //for one pixel in the left image, what is the difference
   						//between its surrounding pixels and the surrounding 
 						//pixels around the closest match in the right image
+  ros::Time start = ros::Time::now();
   //Go from top to bottom in the image
-  for(int i=0; i < r/2; i++)
+  for(int i=0; i < r; i++)
   {
-	  for(int j=max_d; j < c; j+=stride) //go from left to right. Start at column ~60 in LEFT image because the columns <~60 will not
-		  				//match left images' cols that will not match with anything in the right
-						//image. TODO Using max_d because it is conveniently close to 60 in the example data
+	  for(int j=60; j < c; j+=stride) //go from left to right. Start at column ~60 in LEFT image because the columns <~60 will not
+		  				//match left images' cols that will not match with anything in the right image
+						//TODO have to enable parameterization for generalization across camera types/setups
 	  {
 		  
 		  min_dif = int_mx; // minimum difference, pixel-wise between a box around left_rect(i,j) 
@@ -118,30 +120,31 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
 				  for(int k=rii-half_width_to_match; k<rii+half_width_to_match; k++)
 				  {
 					//only use realistic indices
-					if(k<0 || k>c)
+					if(k<0 || k>c && k-rii+j>0 && k-rii+j < c)
 						continue;
 					//find differences betweent the matching pixels in the box around (i,j) and (i, rii)
 				  	int64_t pix_dif_0 = left_rect.at<char>(h, k-rii+j) - right_rect.at<char>(h, k);
 					temp_dif += pix_dif_0*pix_dif_0; //add to total sum of squared differences
 				  }
+				  if(temp_dif>min_dif)
+					  break;
 			  }
 			  //check if this box could have the minimum difference 
 			  if(temp_dif<min_dif)
 			  {
+				  //if so, set the appropriate values
 				  min_dif=temp_dif;
-				  ind=l;
+				  ind=rii;
 			  }
 		}
+		//calculate the actual disparity. We multiply by 16 because that is what stere_image_proc does
+		//RECALL: "Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r." from towards the top of this method
 		int16_t dispy = 16*(int16_t)(j-ind);
-		//if(dispy < 0)
-		//	dispy=dispy*(-1);
-		//if(dispy < 60)
-		disparity16.at<int16_t>(i, j) = dispy;
-		//else
-		//	disparity16.at<int16_t>(i, j) = 60;
+		disparity16.at<int16_t>(i, j) = dispy; //set the (i,j) pixel in the disparity image to be the calcaulated disparity
 	  }
   }
-  std::cout << "HELLOOO\n";
+  ros::Time end = ros::Time::now();
+  std::cout << "Time spent: " << end.toSec() - start.toSec() << "\n";
 
   // Other Stereo parameters
   disparity.f = model.right().fx();
