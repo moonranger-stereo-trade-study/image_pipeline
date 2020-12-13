@@ -80,8 +80,8 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   int r = disparity16.rows;
   int part = 2;
   int stride = 1;
-  int half_height_to_match = 3; //AKA hhtm 
-  int half_width_to_match = 3;
+  int half_height_to_match = 2; //AKA hhtm 
+  int half_width_to_match = 2;
 
   //std::cout << "HI\n";
   int64_t int_mx = 0x7FFFFFFFFFFFFFFF;
@@ -103,30 +103,44 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
 		  			// and boxes around potential matching indices in the right image
 					// The box is (i*half_height_to_match+1) by (2*half_width_to_match+1) (the one corresponding to min_diff)
 					// This is actually storing a sum of pixel-wise squared differences
-		  int ind = j+1; //index of pixel matchng left_rect(i,j) in the right image
+		  int ind = j+60; //index of pixel matchng left_rect(i,j) in the right image
 			
 		  //search for a match along the same horizontal line in the right image, going at most max_d left and right from the pixel (i,j)
-		  for(int rii = j-max_d; rii<j+max_d; rii++) //search up to max_d (disparity) (rii for right image index)
+		  for(int rii_o = j-max_d; rii_o<j+max_d; rii_o++) //search up to max_d (disparity) (rii_o for right image index original)
 		  {
 			  //only search realistic indices
-			  if(rii<0 || rii>c)
-				  continue;
+			  int rii = rii_o;
+			  if(rii<0)
+				 rii=0;
+			  if(rii>=c) //clamp
+			  	rii=c-1;
 			  
 			  int64_t temp_dif = 0; //store the total sum of squared differences for the square around (i,l)
 			  //go though the box around right_image(i, rii) from top to bottom
-			  for(int h=i-half_height_to_match; h<i+half_height_to_match; h++)
+			  for(int h_o=i-half_height_to_match; h_o<i+half_height_to_match; h_o++)
 			  {
+				  int h=h_o;
 				  //only use realistic indices
-				  if(h<0 || h>r)
-					  continue;
+				  if(h<0)
+					h=0;
+				 if(h>=r)
+					h=r-1;
 				  //add up squared differences right_image(i, rii) from left to right
-				  for(int k=rii-half_width_to_match; k<rii+half_width_to_match; k++)
+				  for(int k_o=rii-half_width_to_match; k_o<rii+half_width_to_match; k_o++)
 				  {
 					//only use realistic indices
-					if(k<0 || k>c && k-rii+j>0 && k-rii+j < c)
-						continue;
+					int k = k_o;
+					int krj = k_o - rii + j;
+					if(k<0)
+						k=0;
+					if(k>=c)
+						k=c-1;
+					if(krj<0)
+						krj=0;
+					if(krj>=c)
+						krj=c-1;
 					//find differences betweent the matching pixels in the box around (i,j) and (i, rii)
-				  	int64_t pix_dif_0 = left_rect.at<char>(h, k-rii+j) - right_rect.at<char>(h, k);
+				  	int64_t pix_dif_0 = left_rect.at<char>(h, krj) - right_rect.at<char>(h, k);
 					temp_dif += pix_dif_0*pix_dif_0; //add to total sum of squared differences
 				  }
 				  if(temp_dif>min_dif)
