@@ -40,7 +40,7 @@ int disparity_in_halide(const cv::Mat_<char>& left_rect, const cv::Mat_<char>& r
 
 
 	Halide::Func shift_img("shift_img");
-	shift_img(x, y, shift) = left(clamp_col, y,0);
+	shift_img(x, y, shift) = right(clamp_col, y,0);
 
 	std::cout << "PP2\n";
 
@@ -50,7 +50,7 @@ int disparity_in_halide(const cv::Mat_<char>& left_rect, const cv::Mat_<char>& r
 	std::cout << "PP3\n";
 	
 	Halide::Func dif_img64("dif_img64");
-	dif_img64(x,y, shift) = (shift64(x,y,shift))-(Halide::cast<int64_t>(right(x,y,0)));
+	dif_img64(x,y, shift) = (shift64(x,y,shift))-(Halide::cast<int64_t>(left(x,y,0)));
 
 	std::cout << "PP4\n";
 	
@@ -98,7 +98,7 @@ int disparity_in_halide(const cv::Mat_<char>& left_rect, const cv::Mat_<char>& r
 
 	for(int i=0; i<disparity16.rows; i++)
 	{
-		for(int j=0; j<disparity16.cols; j++)
+		for(int j=60; j<disparity16.cols; j++) //Start at 60 to match sequential algorithm
 		{
 			disparity16.at<int16_t>(i,j) = -16*(disp(j,i));
 			//std::cout << disp(j,i) << " ";
