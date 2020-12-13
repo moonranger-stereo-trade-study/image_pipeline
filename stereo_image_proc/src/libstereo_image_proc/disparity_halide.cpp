@@ -6,6 +6,18 @@
 
 using namespace Halide::Tools;
 
+/*Halide::Func d_img32(Halide::Func shift32, Halide::Buffer<uint8_t> left)
+{
+	Halide::Expr clamp_col;
+	Halide::Var x, y, s, tx, ty, ts, shift;
+	Halide::Func d32;
+	
+	d32(x,y, shift) = (shift32(x,y,shift))-(Halide::cast<int32_t>(left(x,y,0)));
+
+	d32.tile(x,y, tx,ty, 256,1);
+	return d32;
+}*/
+
 int disparity_in_halide(const cv::Mat_<char>& left_rect, const cv::Mat_<char>& right_rect, cv::Mat_<int16_t>& disparity16, int64_t max_d)
 {
 
@@ -42,7 +54,7 @@ int disparity_in_halide(const cv::Mat_<char>& left_rect, const cv::Mat_<char>& r
 	
 	//find the difference between the pixel in left image at (x,y) and pixel in right image at (x+shift, y)
 	Halide::Func dif_img32("dif_img32");
-	dif_img32(x,y, shift) = (shift32(x,y,shift))-(Halide::cast<int32_t>(left(x,y,0)));
+        dif_img32(x,y, shift) = (shift32(x,y,shift))-(Halide::cast<int32_t>(left(x,y,0)));
 
 	//square the differences	
 	Halide::Func square_img("square_img");
@@ -73,7 +85,126 @@ int disparity_in_halide(const cv::Mat_<char>& left_rect, const cv::Mat_<char>& r
 	Halide::Func best_match_buffer("best_match_buffer");
 	best_match_buffer(x,y) = Halide::cast<int16_t>(best_match[0]);
 	
-	//buffer with all of the shifts
+	/***********************************************SCHEDULING******************************************/
+
+	/*//SCHEDULE 1: Split into strips of 32 rowa, parallelize across strips, and compute per row
+	Halide::Var yo,yi;
+	best_match_buffer.split(y,yo,yi,32); //16 lines per strip
+	best_match_buffer.parallel(yi); //parallelize across strips
+	
+	calc_ssd.store_at(best_match_buffer,yo); //store buffer per strip
+        calc_ssd.compute_at(best_match_buffer,yi); //compute per line
+        //calc_ssd.vectorize(x,4); //vectorize across x
+
+	square_img.store_at(best_match_buffer,yo); //store buffer per strip
+        square_img.compute_at(best_match_buffer,yi); //compute per line
+        square_img.vectorize(x,8); //vectorize across x
+
+	dif_img32.store_at(best_match_buffer,yo); //store buffer per strip
+        dif_img32.compute_at(best_match_buffer,yi); //compute per line
+        //f_img32.vectorize(x,4); //vectorize across x
+
+	shift32.store_at(best_match_buffer,yo); //store buffer per strip
+	shift32.compute_at(best_match_buffer,yi); //compute per line
+	//shift32.vectorize(x,8); //vectorize across x*/
+	
+	 /*//SCHEDULE 2: Split into strips of 32 rows, parallelize across strips, and compute per strip
+         Halide::Var yo,yi;
+	 best_match_buffer.split(y,yo,yi,32); //16 lines per strip
+	 best_match_buffer.parallel(yo); //parallelize across strips
+	 
+	 calc_ssd.store_at(best_match_buffer,yi); //store buffer per row
+	 calc_ssd.compute_at(best_match_buffer,yo); //compute per strip 
+	 //calc_ssd.vectorize(x,4); //vectorize across x
+	 
+	 square_img.store_at(best_match_buffer,yo); //store buffer per strip
+	 square_img.compute_at(best_match_buffer,yo); //compute per strip
+	 square_img.vectorize(x,8); //vectorize across x
+	 
+	 dif_img32.store_at(best_match_buffer,yo); //store buffer per strip
+	 dif_img32.compute_at(best_match_buffer,yo); //compute per strip
+	 dif_img32.vectorize(x,8); //vectorize across x
+	 
+	 shift32.store_at(best_match_buffer,yo); //store buffer per strip
+	 shift32.compute_at(best_match_buffer,yo); //compute per strip
+	 //shift32.vectorize(x,8); //vectorize across x*/
+	 
+	/*//SCHEDULE 3: Split into strips of 32 rows, parallelize across strips, 
+	//and compute per row or strip, depending on the part
+        Halide::Var yo,yi;
+	best_match_buffer.split(y,yo,yi,32); //16 lines per strip
+        best_match_buffer.parallel(yo); //parallelize across strips
+
+	calc_ssd.store_at(best_match_buffer,yi); //store buffer per row
+	calc_ssd.compute_at(best_match_buffer,yi); //compute per row
+        //calc_ssd.vectorize(x,4); //vectorize across x
+	
+	square_img.store_at(best_match_buffer,yo); //store buffer per strip
+        square_img.compute_at(best_match_buffer,yo); //compute per strip
+        square_img.vectorize(x,8); //vectorize across x
+
+        dif_img32.store_at(best_match_buffer,yo); //store buffer per strip
+        dif_img32.compute_at(best_match_buffer,yo); //compute per strip
+        dif_img32.vectorize(x,8); //vectorize across x
+
+        shift32.store_at(best_match_buffer,yo); //store buffer per strip
+        shift32.compute_at(best_match_buffer,yo); //compute per strip
+        //shift32.vectorize(x,8); //vectorize across x*/
+
+ 	/*//SCHEDULE 4: Split into pillars of 32 columns each, parallelize and compute per pillar
+	Halide::Var xo,xi;
+        best_match_buffer.split(x,xo,xi,128); //64 lines per strip
+        best_match_buffer.parallel(xo); //parallelize across strips
+
+        calc_ssd.store_at(best_match_buffer,xo); //store buffer per strip
+        calc_ssd.compute_at(best_match_buffer,xo); //compute per line
+        //calc_ssd.vectorize(x,4); //vectorize across x
+	
+	square_img.store_at(best_match_buffer,xo); //store buffer per strip
+	square_img.compute_at(best_match_buffer,xo); //compute per line
+	//square_img.vectorize(x,8); //vectorize across x
+	
+	dif_img32.store_at(best_match_buffer,xo); //store buffer per strip
+	dif_img32.compute_at(best_match_buffer,xo); //compute per line
+	//dif_img32.vectorize(x,8); //vectorize across x
+
+	shift32.store_at(best_match_buffer,xo); //store buffer per strip
+	shift32.compute_at(best_match_buffer,xo); //compute per line
+	//shift32.vectorize(x,8); //vectorize across x*/	 
+	
+	//SCHEDULE 5: Tile parallelize and compute per pillar
+	Halide::Var tx,ty;
+	best_match_buffer.tile(x, y, tx, ty, 128, 16); //64 lines per strip
+	best_match_buffer.parallel(ty); //parallelize across strips
+	
+	calc_ssd.store_at(best_match_buffer,ty); //store buffer per strip
+	calc_ssd.compute_at(best_match_buffer,tx); //compute per line
+	//calc_ssd.vectorize(x,4); //vectorize across x
+	
+	square_img.store_at(best_match_buffer,ty); //store buffer per strip
+	square_img.compute_at(best_match_buffer,ty); //compute per line
+	//square_img.vectorize(x,8); //vectorize across x
+	
+	dif_img32.store_at(best_match_buffer,ty); //store buffer per strip
+	dif_img32.compute_at(best_match_buffer,ty); //compute per line
+	//dif_img32.vectorize(x,8); //vectorize across x
+	
+	shift32.store_at(best_match_buffer,ty); //store buffer per strip
+	shift32.compute_at(best_match_buffer,ty); //compute per line
+	//shift32.vectorize(x,8); //vectorize across x
+
+
+
+	//SCHEDULE 2
+	/*shift32.store_root();
+	best_match_buffer.tile(x,y,tx,ty, 200,1);
+	shift32.compute_at(best_match_buffer,ty);*/
+
+	//shift32.trace_stores();
+	//best_match_buffer.trace_stores();
+
+
+	//buffer with all of the shifts (auto-scheduled if only this line)
 	Halide::Buffer<int16_t> disp=best_match_buffer.realize(disparity16.cols, disparity16.rows);
 	
 	//write values to the CV mat of disparity16
