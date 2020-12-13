@@ -9,7 +9,7 @@ using namespace Halide::Tools;
 int basic_blur(int i) {
 
 	printf("From basic_blur.cpp \n");
-	Halide::Buffer<float> input = load_and_convert_image("/home/mrak/15618/project/catkin_ws/devel/lib/stereo_image_proc/rgb.png");
+	Halide::Buffer<float> input = load_and_convert_image("/home/varshak/catkin_ws/src/image_pipeline/stereo_image_proc/src/libstereo_image_proc/rgb.png");
 	
 	Halide::Var x, y, c;
 	Halide::Func blurx, blury;
@@ -26,7 +26,7 @@ int basic_blur(int i) {
 	blury.realize(output);
 	//std::string s ="blurred";
 	//s = s + std::to_string(i) + ".png";
-	convert_and_save_image(output, "/home/mrak/15618/project/catkin_ws/devel/lib/stereo_image_proc/blurred2.png");
+	convert_and_save_image(output, "/home/varshak/catkin_ws/src/image_pipeline/stereo_image_proc/src/libstereo_image_proc/blurred2.png");
 	printf("Success \n");
 	return 0;
 }

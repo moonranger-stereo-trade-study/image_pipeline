@@ -34,6 +34,7 @@
 #include <ros/assert.h>
 #include "stereo_image_proc/processor.h"
 #include "stereo_image_proc/process_disparity.h"
+#include "stereo_image_proc/disparity_halide.h"
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
 #include <limits>
@@ -88,8 +89,10 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   						//between its surrounding pixels and the surrounding 
 						//pixels around the closest match in the right image
   ros::Time start = ros::Time::now();
+
+  disparity_in_halide(left_rect, right_rect, disparity16, max_d);
   //Go from top to bottom in the image
-  for(int i=0; i < r; i++)
+  /*for(int i=0; i < r; i++)
   {
 	  for(int j=60; j < c; j+=stride) //go from left to right. Start at column ~60 in LEFT image because the columns <~60 will not
 		  				//match left images' cols that will not match with anything in the right image
@@ -142,9 +145,19 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
 		int16_t dispy = 16*(int16_t)(j-ind);
 		disparity16.at<int16_t>(i, j) = dispy; //set the (i,j) pixel in the disparity image to be the calcaulated disparity
 	  }
-  }
+  }*/
   ros::Time end = ros::Time::now();
   std::cout << "Time spent: " << end.toSec() - start.toSec() << "\n";
+
+  /*for(int i=0; i<disparity16.rows; i++)
+  {
+          for(int j=0; j<disparity16.cols; j++)
+          {
+	          std::cout << disparity16.at<int16_t>(i,j) << " ";
+		  //disparity16.at<int16_t>(i,j) = -1* disparity16.at<int16_t>(i,j);
+	  }
+	  std::cout << "\n";
+  }*/
 
   // Other Stereo parameters
   disparity.f = model.right().fx();
