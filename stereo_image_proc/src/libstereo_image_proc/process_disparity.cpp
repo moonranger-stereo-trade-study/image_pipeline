@@ -51,18 +51,25 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
 
+  //pyramid down
+  cv::Mat lt, rt;
+  cv::pyrDown(left_rect, lt, cv::Size(left_rect.cols/2 , left_rect.rows/2) );
+  cv::pyrDown(right_rect, rt, cv::Size(right_rect.cols/2 , right_rect.rows/2) );
+
   // Block matcher produces 16-bit signed (fixed point) disparity image
   if (current_stereo_algorithm == BM)
 #if CV_MAJOR_VERSION >= 3
-    block_matcher->compute(left_rect, right_rect, disparity16);
+    block_matcher->compute(lt, rt, disparity16);
   else
-    sg_block_matcher->compute(left_rect, right_rect, disparity16);
+    sg_block_matcher->compute(lt, rt, disparity16);
 #else
-    block_matcher(left_rect, right_rect, disparity16);
+    block_matcher(lt, rt, disparity16);
   else
-    sg_block_matcher(left_rect, right_rect, disparity16);
+    sg_block_matcher(lt, rt, disparity16);
 #endif
 
+  cv::pyrUp(disparity16, disparity16, cv::Size(left_rect.cols, left_rect.rows) );
+  
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;
   dimage.height = disparity16.rows;
