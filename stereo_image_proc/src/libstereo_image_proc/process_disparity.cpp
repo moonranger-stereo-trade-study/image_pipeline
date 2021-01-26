@@ -34,6 +34,7 @@
 #include <ros/assert.h>
 #include "stereo_image_proc/processor.h"
 #include "stereo_image_proc/process_disparity.h"
+#include "opencv2/ximgproc/disparity_filter.hpp"
 #include <sensor_msgs/image_encodings.h>
 #include <cmath>
 #include <limits>
@@ -51,12 +52,29 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
 
+  // from https://github.com/abhileshborode/Stereo-depth-reconstruction/blob/9fc1a14241f4c32c25f9816e73d93debaa79179f/depth_filter.cpp
+  cv::Rect ROI;
+  cv::Ptr<cv::ximgproc::DisparityWLSFilter> wls_filter;
+  cv::Mat ldisp, rdisp;
+  double lambda = 10000.0;
+  double sigma = 1.0;
   // Block matcher produces 16-bit signed (fixed point) disparity image
   if (current_stereo_algorithm == BM)
 #if CV_MAJOR_VERSION >= 3
     block_matcher->compute(left_rect, right_rect, disparity16);
   else
-    sg_block_matcher->compute(left_rect, right_rect, disparity16);
+    //ROS_ERROR("HEY\n");
+    sg_block_matcher->compute(left_rect, right_rect, ldisp);
+    sg_block_matcher->compute(right_rect, left_rect, rdisp);
+    //ROS_ERROR("HEY2\n");
+    //filter
+    wls_filter = cv::ximgproc::createDisparityWLSFilter(sg_block_matcher);
+    wls_filter->setLambda(lambda);
+    ROS_ERROR("HEY2.2.3\n");
+    wls_filter->setSigmaColor(sigma);
+    ROS_ERROR("HEY2.3\n");
+    wls_filter->filter(ldisp, left_rect, disparity16, rdisp);
+    ROS_ERROR("HEY3\n");
 #else
     block_matcher(left_rect, right_rect, disparity16);
   else
