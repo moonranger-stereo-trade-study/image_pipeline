@@ -65,7 +65,7 @@ public:
   {
     block_matcher_ = cv::StereoBM::create();
     sg_block_matcher_ = cv::StereoSGBM::create(1, 1, 10);
-    sg_block_matcher_->setMode(cv::StereoSGBM::MODE_HH);
+    sg_block_matcher_->setMode(cv::StereoSGBM::MODE_SGBM_3WAY);
 #else
     : block_matcher_(cv::StereoBM::BASIC_PRESET),
       sg_block_matcher_()
