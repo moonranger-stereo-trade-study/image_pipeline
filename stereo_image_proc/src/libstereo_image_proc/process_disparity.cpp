@@ -44,7 +44,7 @@ namespace stereo_image_proc {
 void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat& right_rect,
                                        const image_geometry::StereoCameraModel& model,
                                        stereo_msgs::DisparityImage& disparity, StereoType current_stereo_algorithm, 
-				       cv::Ptr<cv::StereoBM> block_matcher, cv::Ptr<cv::StereoSGBM> sg_block_matcher, cv::Mat_<int16_t> disparity16, const void* sp)
+				       cv::cuda::StereoBeliefPropogation cbp, cv::Mat_<int16_t> disparity16, const void* sp)
 {
   StereoProcessor SP = *((StereoProcessor*)sp);
   // Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r.
@@ -52,7 +52,7 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
   static const double inv_dpp = 1.0 / DPP;
 
   // Block matcher produces 16-bit signed (fixed point) disparity image
-  if (current_stereo_algorithm == BM)
+  /*if (current_stereo_algorithm == BM)
 #if CV_MAJOR_VERSION >= 3
     block_matcher->compute(left_rect, right_rect, disparity16);
   else
@@ -61,7 +61,9 @@ void ProcessDisparity::processDisparity(const cv::Mat& left_rect, const cv::Mat&
     block_matcher(left_rect, right_rect, disparity16);
   else
     sg_block_matcher(left_rect, right_rect, disparity16);
-#endif
+#endif*/
+
+  cbp::compute(left_rect, right_rect, disparity, cv::cuda::Stream::Null());	
 
   // Fill in DisparityImage image data, converting to 32-bit float
   sensor_msgs::Image& dimage = disparity.image;

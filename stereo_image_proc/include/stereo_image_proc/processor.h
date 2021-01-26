@@ -44,6 +44,8 @@
 #include "stereo_image_proc/point_processing.h"
 #include "stereo_image_proc/points2_processing.h"
 #include "stereo_image_proc/rectification_processing.h"
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudastereo.hpp>
 
 namespace stereo_image_proc {
 
@@ -179,6 +181,7 @@ private:
   StereoType current_stereo_algorithm_;
   // scratch buffer for dense point cloud
   mutable cv::Mat_<cv::Vec3f> dense_points_;
+  cv::cuda::StereoBeliefPropogation cbp;
 };
 
 
