@@ -181,7 +181,7 @@ private:
   StereoType current_stereo_algorithm_;
   // scratch buffer for dense point cloud
   mutable cv::Mat_<cv::Vec3f> dense_points_;
-  cv::cuda::StereoBeliefPropogation cbp;
+  cv::cuda::StereoConstantSpaceBP csbp;
 };
 
 
